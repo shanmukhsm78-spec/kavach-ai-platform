@@ -1,0 +1,63 @@
+# One-command run for the Kavach AI Platform.
+#
+#   From repo root:  docker compose -f docker/docker-compose.yml up --build
+#   Or simply:       make up
+#
+# Brings up: backend (FastAPI :8000) + frontend (Next.js :3000).
+# The OWASP Juice Shop vulnerable lab (for Attack mode) is OPTIONAL and lives
+# behind the "lab" profile so the core platform starts without it:
+#
+#   docker compose -f docker/docker-compose.yml --profile lab up --build
+#   (or: make lab)
+#
+# When the lab is up, point Attack mode at http://localhost:3001 from the host,
+# or http://juiceshop:3000 from inside the backend container.
+services:
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # Offline-first by default: no LLM calls, deterministic output.
+      - KAVACH_LLM=off
+      - LLM_PROVIDER=local
+      - LLM_BASE_URL=http://host.docker.internal:11434/v1
+      - LLM_MODEL=llama3.1:8b
+      - FRONTEND_ORIGIN=http://localhost:3000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ../backend:/app/backend
+      - ../agents:/app/agents
+      - ../modes:/app/modes
+      - ../datasets:/app/datasets
+      - ../data:/app/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/frontend.Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE=http://localhost:8000
+    depends_on:
+      - backend
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  # Optional vulnerable lab target for Attack mode (OWASP Juice Shop).
+  # Only started with: --profile lab   (host port 3001 to avoid clashing
+  # with the frontend on 3000).
+  juiceshop:
+    image: bkimminich/juice-shop:latest
+    profiles: ["lab"]
+    ports:
+      - "3001:3000"
+    restart: unless-stopped

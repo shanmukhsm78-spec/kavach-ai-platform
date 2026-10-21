@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Kavach Shield (demo)",
+  "version": "0.2.0",
+  "description": "Checks the current page URL and selected text with the Kavach Protect API (phishing + scam detection).",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["http://localhost:8000/*"],
+  "action": { "default_popup": "popup.html" },
+  "content_scripts": [
+    { "matches": ["<all_urls>"], "js": ["content.js"] }
+  ]
+}

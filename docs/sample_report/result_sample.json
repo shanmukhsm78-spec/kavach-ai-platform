@@ -1,0 +1,162 @@
+{
+  "mode": "attack",
+  "scan_id": "20261021-062349-b2bfc4",
+  "target": "http://127.0.0.1:39357",
+  "scope": "web",
+  "status": "completed",
+  "recon": {
+    "target_url": "http://127.0.0.1:39357",
+    "status_code": 200,
+    "server_header": "uvicorn",
+    "powered_by": "",
+    "detected_tech": [
+      "Express",
+      "Server: uvicorn"
+    ],
+    "response_headers": {
+      "date": "Wed, 21 Oct 2026 06:23:49 GMT",
+      "server": "uvicorn",
+      "content-length": "336",
+      "content-type": "text/html; charset=utf-8"
+    },
+    "routes": [
+      "http://127.0.0.1:39357/",
+      "http://127.0.0.1:39357/.env",
+      "http://127.0.0.1:39357/.git/config",
+      "http://127.0.0.1:39357/admin",
+      "http://127.0.0.1:39357/api",
+      "http://127.0.0.1:39357/backup",
+      "http://127.0.0.1:39357/config.json",
+      "http://127.0.0.1:39357/login",
+      "http://127.0.0.1:39357/robots.txt",
+      "http://127.0.0.1:39357/server-status",
+      "http://127.0.0.1:39357/sitemap.xml",
+      "http://127.0.0.1:39357/static/",
+      "http://127.0.0.1:39357/uploads/"
+    ],
+    "forms": [
+      {
+        "action": "http://127.0.0.1:39357/search",
+        "method": "GET",
+        "inputs": [
+          "q"
+        ]
+      }
+    ],
+    "title": "VulnShop",
+    "error": ""
+  },
+  "findings": [
+    {
+      "check_id": "missing_security_headers",
+      "title": "Missing HTTP security headers",
+      "severity": "Medium",
+      "description": "The application does not send one or more recommended security response headers, leaving it exposed to clickjacking, MIME sniffing, and content-injection attacks.",
+      "evidence": "Missing header(s): Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security, Referrer-Policy",
+      "location": "http://127.0.0.1:39357",
+      "remediation": "Add the missing headers (e.g. Content-Security-Policy, X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Strict-Transport-Security, Referrer-Policy) at the app or reverse proxy layer.",
+      "mitre": {
+        "id": "T1189",
+        "name": "Drive-by Compromise",
+        "tactic": "Initial Access"
+      },
+      "cvss_qualitative": "Medium (5.3)",
+      "exploit_proof": "Evidence captured during scanning (non-destructive): Missing header(s): Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security, Referrer-Policy"
+    },
+    {
+      "check_id": "reflected_xss",
+      "title": "Reflected Cross-Site Scripting (XSS)",
+      "severity": "High",
+      "description": "User-supplied input is reflected into the HTML response without encoding, allowing script execution in a victim's browser.",
+      "evidence": "Payload reflected unescaped via '?q='. Marker: kv7xss",
+      "location": "http://127.0.0.1:39357?q=%22%3E%3Csvg%2Fonload%3Dalert%28kv7xss%29%3E",
+      "remediation": "Context-aware output encoding, a strict Content-Security-Policy, and input validation.",
+      "mitre": {
+        "id": "T1059.007",
+        "name": "Command and Scripting Interpreter: JavaScript",
+        "tactic": "Execution"
+      },
+      "cvss_qualitative": "High (7.4)",
+      "exploit_proof": "The injected payload is returned verbatim inside the HTML response (unencoded). Context:\n...dmin&lt;/a&gt;\n          &lt;p&gt;You searched for: &quot;&gt;&lt;svg/onload=alert(kv7xss)&gt;&lt;/p&gt;\n        &lt;/body&gt;&lt;/html&gt;..."
+    },
+    {
+      "check_id": "sqli_error_based",
+      "title": "SQL Injection (error-based)",
+      "severity": "Critical",
+      "description": "A single-quote probe triggers a database error, indicating input is concatenated into SQL and the app is injectable.",
+      "evidence": "DB error signature observed: 'you have an error in your sql syntax' at http://127.0.0.1:39357/search?id=%27",
+      "location": "http://127.0.0.1:39357/search?id=%27",
+      "remediation": "Use parameterised queries / prepared statements and an ORM; never build SQL by string concatenation. Disable verbose DB errors.",
+      "mitre": {
+        "id": "T1190",
+        "name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access"
+      },
+      "cvss_qualitative": "Critical (9.1)",
+      "exploit_proof": "Evidence captured during scanning (non-destructive): DB error signature observed: 'you have an error in your sql syntax' at http://127.0.0.1:39357/search?id=%27"
+    },
+    {
+      "check_id": "directory_listing",
+      "title": "Directory listing enabled",
+      "severity": "Medium",
+      "description": "The server returns an auto-generated directory index, exposing file names an attacker can harvest.",
+      "evidence": "'Index of' page served at /uploads/",
+      "location": "http://127.0.0.1:39357/uploads/",
+      "remediation": "Disable automatic directory indexing (e.g. 'Options -Indexes').",
+      "mitre": {
+        "id": "T1083",
+        "name": "File and Directory Discovery",
+        "tactic": "Discovery"
+      },
+      "cvss_qualitative": "Medium (5.3)",
+      "exploit_proof": "Evidence captured during scanning (non-destructive): 'Index of' page served at /uploads/"
+    },
+    {
+      "check_id": "exposed_sensitive_endpoint",
+      "title": "Exposed sensitive file: /.env",
+      "severity": "High",
+      "description": "A file that commonly contains secrets or source metadata is publicly readable.",
+      "evidence": "HTTP 200 at /.env containing sensitive keywords.",
+      "location": "http://127.0.0.1:39357/.env",
+      "remediation": "Block access to dotfiles/backups at the web server and remove them from the web root; rotate any leaked secrets.",
+      "mitre": {
+        "id": "T1552.001",
+        "name": "Unsecured Credentials: Credentials In Files",
+        "tactic": "Credential Access"
+      },
+      "cvss_qualitative": "High (7.5)",
+      "exploit_proof": "Evidence captured during scanning (non-destructive): HTTP 200 at /.env containing sensitive keywords."
+    },
+    {
+      "check_id": "default_weak_config",
+      "title": "Admin interface reachable without authentication",
+      "severity": "High",
+      "description": "An administrative endpoint is reachable and returns content without an authentication challenge.",
+      "evidence": "HTTP 200 at /admin returning admin/dashboard content.",
+      "location": "http://127.0.0.1:39357/admin",
+      "remediation": "Require authentication + authorisation on all admin routes, restrict by network, and change default credentials.",
+      "mitre": {
+        "id": "T1078.001",
+        "name": "Valid Accounts: Default Accounts",
+        "tactic": "Defense Evasion"
+      },
+      "cvss_qualitative": "High (8.0)",
+      "exploit_proof": "Evidence captured during scanning (non-destructive): HTTP 200 at /admin returning admin/dashboard content."
+    }
+  ],
+  "mitre_attack": [
+    "T1059.007 Command and Scripting Interpreter: JavaScript",
+    "T1078.001 Valid Accounts: Default Accounts",
+    "T1083 File and Directory Discovery",
+    "T1189 Drive-by Compromise",
+    "T1190 Exploit Public-Facing Application",
+    "T1552.001 Unsecured Credentials: Credentials In Files"
+  ],
+  "summary": "The automated assessment of http://127.0.0.1:39357 identified 6 finding(s): 1 Critical, 3 High, 2 Medium. The highest-impact issues should be remediated first. All testing was performed non-destructively against an authorised local lab.",
+  "summary_engine": "rule-based",
+  "report": {
+    "markdown": "/workspace/kavach/data/attack/20261021-062349-b2bfc4/report.md",
+    "pdf": "/workspace/kavach/data/attack/20261021-062349-b2bfc4/report.pdf",
+    "dir": "/workspace/kavach/data/attack/20261021-062349-b2bfc4"
+  }
+}

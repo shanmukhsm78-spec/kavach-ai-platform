@@ -1,0 +1,54 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Node / Next.js ----
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env*.local
+npm-debug.log*
+
+# ---- IDE / OS ----
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# ---- Generated reports / logs ----
+# Ignore stray PDFs/logs, but KEEP the committed sample report under docs/.
+*.pdf
+!docs/**
+*.log
+reports/
+dist/
+build/
+
+# ---- Runtime output in data/ (keep the dir + sample report, drop generated runs) ----
+data/attack/*
+!data/attack/.gitkeep
+data/defend/*
+!data/defend/.gitkeep
+data/protect/*
+!data/protect/.gitkeep
+
+# ---- Datasets ----
+# The small committed SAMPLE datasets (CSVs, demo .wav files, READMEs) ARE kept.
+# Only ignore large/raw downloads a user fetches locally for a real benchmark.
+datasets/**/raw/
+datasets/**/*.zip
+datasets/**/*.tar.gz
+datasets/**/*.tgz
+
+# ---- Node (all dirs) / Expo ----
+node_modules/
+.expo/
+mobile/.expo/
+*.tsbuildinfo

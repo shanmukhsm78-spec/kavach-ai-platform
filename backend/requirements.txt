@@ -1,0 +1,16 @@
+# Kavach AI Platform - backend dependencies (pinned, lightweight)
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
+pydantic-settings==2.6.1
+python-dotenv==1.0.1
+httpx==0.28.1
+# Agent core / LLM (OpenAI-compatible client works for local + hosted)
+openai==1.57.4
+# Report generation (Attack mode)
+markdown==3.7
+reportlab==4.2.5
+# Utilities
+python-multipart==0.0.17
+# Testing (Attack mode offline pipeline test)
+pytest==8.3.4
