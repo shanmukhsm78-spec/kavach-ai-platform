@@ -74,5 +74,18 @@ curl -s -X POST localhost:8000/protect/audio -F file=@datasets/voice/fake/fake_1
 | Voice heuristic (synthetic) | 8 | 1.000 | 1.000 | 1.000 |
 
 Caveat for the viva: the rules were written while looking at these samples, so
-these are *sanity* numbers, not a benchmark. Report real numbers after
-expanding with PhishTank/OpenPhish/UCI and the UCI SMS Spam Collection.
+these are *sanity* numbers, not a benchmark.
+
+## Real benchmark (held-out test, `make protect-download && make protect-bench`)
+Full methodology and honesty notes: [`protect_benchmark.md`](protect_benchmark.md).
+PhiUSIIL URLs (UCI 967) and UCI SMS Spam Collection (UCI 228), stratified 80/20, seed 42.
+
+| Detector | n (test) | Accuracy | Precision | Recall | F1 |
+|---|---|---|---|---|---|
+| URL (rules) | 1000 | 0.714 | 1.000 | 0.428 | 0.599 |
+| SMS rules only | 1116 | 0.888 | 0.857 | 0.200 | 0.324 |
+| SMS rules + NB (NB fit on train only) | 1116 | 0.962 | 0.982 | 0.733 | 0.839 |
+| SMS NB only | 1116 | 0.983 | 0.952 | 0.920 | 0.936 |
+
+OpenPhish live feed (300 URLs): recall 0.513. Voice: demonstration-grade, not benchmarked.
+The UCI SMS corpus is not Indian-context; India scam rules are only checked on the synthetic samples.

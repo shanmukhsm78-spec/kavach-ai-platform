@@ -19,6 +19,8 @@ REASONS: dict[str, dict[str, str]] = {
                  "hi": "साइट सुरक्षित HTTPS कनेक्शन का उपयोग नहीं करती।"},
     "suspicious_tld": {"en": "The domain ends in a cheap TLD commonly abused by scammers.",
                        "hi": "डोमेन का अंत ऐसे सस्ते TLD से होता है जिसका स्कैमर अक्सर दुरुपयोग करते हैं।"},
+    "free_hosting": {"en": "The page is on a free hosting / site-builder service that scammers often abuse.",
+                     "hi": "यह पेज मुफ़्त होस्टिंग सेवा पर है, जिसका स्कैमर अक्सर दुरुपयोग करते हैं।"},
     "shortener": {"en": "The link is shortened, so the real destination is hidden.",
                   "hi": "लिंक छोटा (short) किया गया है, असली पता छिपा है।"},
     "many_subdomains": {"en": "The address has an unusually large number of subdomains.",

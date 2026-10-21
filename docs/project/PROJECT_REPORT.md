@@ -85,7 +85,7 @@ This project presents **Kavach AI Platform** ("Kavach" means armour). It is one 
 2. **Defend mode (Sentinel):** an **AI-agent firewall** that inspects three channels (user prompts, retrieved documents, tool calls) and returns ALLOW / SANITIZE / BLOCK with a risk score and reasons. It uses layered detection (deterministic rules with leetspeak and base64 normalisation, learned signatures, and an optional LLM judge that can only escalate), plus a tool allow/deny policy. A **red-team attack generator** and a **self-heal loop** learn from bypasses. In the measured self-heal demonstration on the 18-case seeded corpus (15 attacks, 3 benign), the detection rate rose from **73.3 % (11/15) to 100 % (15/15)** after the four "stealth" bypasses were learned.
 3. **Protect mode (Kavach Shield):** an **anti-scam detector** for phishing URLs (13 weighted lexical features plus a trusted-domain list), Indian-context scam SMS (11 regex rule families combined with a pure-Python Multinomial Naive Bayes), and voice-clone audio (a demonstration-grade signal heuristic). Every verdict comes with a plain-language explanation in **English and Hindi** and shows the national cyber-crime helpline **1930**. A Chrome MV3 **browser extension** checks the current page and selected text.
 
-The platform is **offline-first**: a pluggable, OpenAI-compatible LLM client (local Ollama or hosted) is used only to improve prose or escalate verdicts, and with `KAVACH_LLM=off` all three modes produce deterministic results with no network access. The system runs with one Docker Compose command, is covered by **37 passing automated tests** (pytest), and is released under the MIT licence. On the small sample sets bundled with the project, the Protect detectors score about 100 % (URL, n = 40), 88.1–92.9 % (SMS, n = 42) and 100 % (voice, n = 8, synthetic). **These are small-sample sanity checks on data the rules were tuned against, not a benchmark,** and the report states this wherever the numbers appear.
+The platform is **offline-first**: a pluggable, OpenAI-compatible LLM client (local Ollama or hosted) is used only to improve prose or escalate verdicts, and with `KAVACH_LLM=off` all three modes produce deterministic results with no network access. The system runs with one Docker Compose command, is covered by **40 passing automated tests** (pytest), and is released under the MIT licence. On held-out public test sets, the Protect detectors reach **F1 0.599** for phishing URLs (PhiUSIIL, n = 1,000; precision 1.000, recall 0.428) and **F1 0.839** for SMS scam detection with rules + Naive Bayes (UCI SMS Spam Collection, n = 1,116; accuracy 0.962). The voice detector is demonstration-grade and is not benchmarked. Small bundled sample sets are kept only as sanity checks.
 
 **Keywords:** AI agent security, prompt injection, LLM firewall, automated penetration testing, MITRE ATT&CK, phishing detection, scam SMS, voice-clone detection, Naive Bayes, offline-first, FastAPI, Next.js.
 
@@ -294,7 +294,7 @@ Kavach is a three-mode platform on a shared core:
 | # | Objective | How it is met (verifiable in repo) |
 |---|---|---|
 | O1 | Build a shared, vendor-neutral agent core used by all modes | `agents/core/agent.py`, `agents/core/llm.py`; each mode's `llm_assist.py` imports it |
-| O2 | Make the whole platform work offline and deterministically | `KAVACH_LLM=off` default in `.env.example`, Makefile, Dockerfile and test `conftest.py`; 37 tests pass offline |
+| O2 | Make the whole platform work offline and deterministically | `KAVACH_LLM=off` default in `.env.example`, Makefile, Dockerfile and test `conftest.py`; 40 tests pass offline |
 | O3 | Implement a safe, local-only multi-stage pentester | `modes/attack/safety.py` scope guard; GET-only checks; non-destructive PoC in `exploit.py` |
 | O4 | Map every finding to MITRE ATT&CK and generate PDF + Markdown reports | `modes/attack/mitre.py`; `modes/attack/reporter.py` (ReportLab); sample in `docs/sample_report/` |
 | O5 | Inspect prompts, documents and tool calls; block injection, exfiltration and dangerous tools | `modes/defend/detectors.py`, `tool_policy.py`, `firewall.py` |
@@ -302,7 +302,7 @@ Kavach is a three-mode platform on a shared core:
 | O7 | Detect phishing URLs, Indian scam SMS and (demo-grade) voice clones with explanations | `modes/protect/url_detector.py`, `sms_detector.py`, `voice_detector.py` |
 | O8 | Provide English + Hindi explanations and the 1930 helpline | `modes/protect/i18n.py`; dashboard EN/HI toggle; extension हिंदी checkbox |
 | O9 | Provide a usable dashboard and browser extension | `frontend/app/*`; `extension/` (Chrome MV3) |
-| O10 | One-command deployment and automated tests | `docker/docker-compose.yml`, `Makefile`; `tests/` (37 tests) |
+| O10 | One-command deployment and automated tests | `docker/docker-compose.yml`, `Makefile`; `tests/` (40 tests) |
 
 ### 4.3 Design principles
 
@@ -709,7 +709,7 @@ kavach/
 ├── datasets/           # phishing/urls_sample.csv, sms/sms_samples.csv, voice/{real,fake}/*.wav
 ├── data/               # runtime output (attack/, defend/, protect/), git-ignored contents
 ├── docker/             # backend & frontend Dockerfiles, docker-compose.yml
-├── tests/              # 37 pytest tests
+├── tests/              # 40 pytest tests
 ├── scripts/            # make_voice_samples.py
 ├── docs/               # architecture, per-mode docs, sample report, this report
 ├── Makefile, LICENSE (MIT), README.md, .env.example
@@ -784,16 +784,17 @@ Run with: `make test` (equivalently `KAVACH_LLM=off .venv/bin/pytest -q`).
 
 ### 9.2 Test inventory
 
-**Table 9.1 Automated tests (37 total, all passing)**
+**Table 9.1 Automated tests (40 total, all passing)**
 
 | File | Tests | What is verified |
 |---|---|---|
 | `tests/test_attack_pipeline.py` | 2 | (1) Scope guard refuses `http://example.com` with `ScopeError` before any traffic. (2) Full pipeline against the mock target: status completed, rule-based summary, the six expected checks found (headers, XSS, SQLi, sensitive file, admin, directory listing), every finding has an ATT&CK `T…` ID and a safe PoC, Markdown exists, PDF starts with `%PDF`; the sample report is copied to `docs/sample_report/`. |
 | `tests/test_defend_firewall.py` | 14 | Known injection blocked; clean prompt allowed; base64-encoded injection caught; dangerous tool call blocked; benign `search` allowed; exfiltration e-mail blocked; indirect injection in a document blocked; full indirect-injection chain caught; clean search lets the agent finish; red-team detects known and misses stealth; self-heal reduces bypass rate; a learned signature blocks on the next inspect; Defend routes registered; API inspect + stats. |
 | `tests/test_protect_detectors.py` | 21 (parametrised) | 6 phishing URLs → dangerous (IP host, KYC/xyz, `paypa1`, `@` trick, punycode `аpple`, brand-in-subdomain `.top`); 4 legitimate URLs → safe (onlinesbi.sbi, hdfcbank.com, github.com, cybercrime.gov.in); 4 scam SMS flagged (digital arrest, KYC + link, OTP, UPI QR); 3 ham SMS safe (genuine OTP with "do not share", meeting message, family message); bilingual explanation present; audio returns a score; sample-accuracy evaluation runs; API routes work. |
-| **Total** | **37** | Result: `37 passed` |
+| `tests/test_protect_benchmark.py` | 3 | Benchmark CSVs have `split` = train/test (skipped if not downloaded); benchmark report is generated with held-out and voice-caveat sections. |
+| **Total** | **40** | Result: `40 passed` |
 
-[PLACEHOLDER: Insert a screenshot of the `37 passed` terminal output as Figure 9.x.]
+[PLACEHOLDER: Insert a screenshot of the `40 passed` terminal output as Figure 9.x.]
 
 ### 9.3 Attack mode results
 
@@ -848,7 +849,28 @@ Computed by `python -m modes.protect.evaluate` (also `GET /protect/eval`). A pre
 - For SMS, the leave-one-out evaluation is the more honest of the two rows, because the Naive Bayes model never sees the message it scores. Adding NB slightly *lowered* accuracy on this tiny set (two extra false positives). This is expected with 41 training rows per fold and is one reason the design caps the ML influence at ±15 points.
 - Recall is identical (0.864, 3 missed scams) in both SMS configurations, which shows that misses come from rule coverage rather than the model.
 
-### 9.6 Qualitative examples
+### 9.6 Protect mode results: real held-out benchmark
+
+Generated by `make protect-download && make protect-bench`; full report in `docs/protect_benchmark.md`. Data: **PhiUSIIL Phishing URL Dataset** (UCI id 967, CC BY 4.0; 2,500 phishing + 2,500 legitimate URLs sampled with seed 42) and the **UCI SMS Spam Collection** (id 228, CC BY 4.0; all 5,574 messages, 747 spam). Stratified **80/20 train/test split, seed 42**. The Naive Bayes model is fitted on the train split only; no rule was tuned on the test split.
+
+**Table 9.4 Protect held-out test results**
+
+| Detector | n (test) | Accuracy | Precision | Recall | F1 | TP / FP / FN / TN |
+|---|---|---|---|---|---|---|
+| Phishing URL (rules) | 1,000 | 0.714 | 1.000 | 0.428 | 0.599 | 214 / 0 / 286 / 500 |
+| Scam SMS: rules only | 1,116 | 0.888 | 0.857 | 0.200 | 0.324 | 30 / 5 / 120 / 961 |
+| Scam SMS: rules + Naive Bayes | 1,116 | 0.962 | 0.982 | 0.733 | 0.839 | 110 / 2 / 40 / 964 |
+| Scam SMS: Naive Bayes only (p ≥ 0.5) | 1,116 | 0.983 | 0.952 | 0.920 | 0.936 | 138 / 7 / 12 / 959 |
+
+Extra check: on 300 live URLs from the OpenPhish community feed (2026-10-21, all phishing) the URL detector flagged 154 (**recall 0.513**).
+
+**Observations and honesty notes.**
+- The URL detector is very precise (no false alarms on 500 legitimate test URLs) but misses over half of phishing URLs. Most misses are plain domains with no suspicious path; lexical rules cannot judge these without page content or reputation data. One feature (`free_hosting`: web.app, firebaseapp, repl.co, IPFS gateways…) was added after **train-split** error analysis; it raised held-out recall from 0.162 to 0.428.
+- The UCI SMS corpus is ~2010 UK/Singapore spam, so the India-specific rules (digital arrest, KYC, UPI) rarely fire on it — hence low rules-only recall. Naive Bayes trained on the corpus does most of the work. Rules+NB is below NB-only because the fusion caps NB when no rule fires (a safety choice made for the tiny Indian sample model); this trade-off is reported, not hidden.
+- India-context scam performance is only shown on the small **synthetic** sample set (Table 9.3), which is not a benchmark. Voice remains **demonstration-grade**; no public anti-spoofing corpus was evaluated.
+- Single split, no confidence intervals, no adversarial testing.
+
+### 9.7 Qualitative examples
 
 | Input | Mode | Output |
 |---|---|---|
@@ -928,7 +950,7 @@ Computed by `python -m modes.protect.evaluate` (also `GET /protect/eval`). A pre
 
 This project designed and implemented **Kavach AI Platform**, a single, explainable, offline-capable AI security platform that tells one coherent story across three modes on a shared agent core. **Attack mode** shows how an automated pentesting pipeline can be built **safely**: a code-enforced local-only scope guard, eight non-destructive checks, MITRE ATT&CK mapping and professional PDF/Markdown reports. **Defend mode** shows that LLM agents can be protected across **prompts, retrieved documents and tool calls** with layered, explainable detection and a tool policy, and its red-team and self-heal loop measurably raised detection on the seeded corpus from **73.3 % to 100 %**, with the caveat that this proves the feedback loop rather than generalisation. **Protect mode** turns the same detection ideas into **bilingual, plain-language protection** for ordinary Indian users against phishing links, scam messages (including digital-arrest, KYC, OTP and UPI fraud) and, at demonstration level, synthetic voice. Every warning points to the 1930 helpline.
 
-The engineering choices (deterministic core with an optional, escalate-only LLM, pure-Python dependencies, file-based stores, Docker, and **37 passing offline tests**) make the system reproducible on any laptop and suitable for evaluation. The report has been explicit about the limits: small, partly synthetic sample sets that are sanity checks rather than benchmarks; rule-based detection that can be evaded; and a demonstration-grade voice detector. These limits define a clear roadmap toward a research-grade system.
+The engineering choices (deterministic core with an optional, escalate-only LLM, pure-Python dependencies, file-based stores, Docker, and **40 passing offline tests**) make the system reproducible on any laptop and suitable for evaluation. The report has been explicit about the limits: modest held-out benchmark results (URL recall 0.43) on public data that differs from Indian scam traffic; rule-based detection that can be evaded; and a demonstration-grade voice detector. These limits define a clear roadmap toward a research-grade system.
 
 ---
 
@@ -996,7 +1018,7 @@ The engineering choices (deterministic core with an optional, escalate-only LLM,
 
 ```bash
 # from repo root, after setup (see SETUP_AND_RUN.md)
-make test                                                    # -> 37 passed
+make test                                                    # -> 40 passed
 KAVACH_LLM=off .venv/bin/python -m modes.protect.evaluate    # -> Table 9.3
 
 # Self-heal numbers, using an isolated (empty) data dir so old learned sigs don't interfere

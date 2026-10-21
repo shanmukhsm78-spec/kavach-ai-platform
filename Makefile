@@ -40,7 +40,7 @@ down:
 health:
 	curl -s http://localhost:8000/health | $(PY) -m json.tool
 
-.PHONY: test protect-eval voice-samples
+.PHONY: test protect-eval protect-download protect-bench voice-samples
 test:
 	KAVACH_LLM=off $(VENV)/bin/pytest -q
 
@@ -49,3 +49,9 @@ protect-eval:
 
 voice-samples:
 	$(PY) scripts/make_voice_samples.py
+
+protect-download:
+	$(PY) scripts/protect_download.py
+
+protect-bench:
+	KAVACH_LLM=off $(PY) -m modes.protect.evaluate --bench

@@ -33,6 +33,15 @@ SUSPICIOUS_TLDS = {"xyz", "top", "tk", "ml", "ga", "cf", "gq", "buzz", "click", 
                    "work", "info", "online", "site", "live", "rest", "icu", "shop", "cyou"}
 SHORTENERS = {"bit.ly", "tinyurl.com", "goo.gl", "t.co", "is.gd", "cutt.ly", "rb.gy",
               "ow.ly", "shorturl.at", "tiny.cc"}
+# Free hosting / site-builder / IPFS gateways: legitimate services, but heavily
+# abused for throw-away phishing pages. Added after TRAIN-split error analysis
+# on the PhiUSIIL benchmark (see docs/protect_benchmark.md).
+FREE_HOSTS = ("web.app", "firebaseapp.com", "repl.co", "glitch.me", "netlify.app",
+              "weeblysite.com", "weebly.com", "wixsite.com", "webwave.dev", "pages.dev",
+              "workers.dev", "vercel.app", "herokuapp.com", "000webhostapp.com",
+              "blogspot.com", "sites.google.com", "web.core.windows.net", "github.io",
+              "ipfs.io", "dweb.link", "fleek.cool", "ipfs.", "/ipfs/", "linkpc.net",
+              "duckdns.org", "ngrok.io", "square.site", "godaddysites.com", "tw1.ru")
 SENSITIVE = ("login", "verify", "kyc", "update", "secure", "account", "banking",
              "signin", "wallet", "otp", "reward", "refund", "confirm", "suspend")
 
@@ -44,7 +53,7 @@ WEIGHTS = {
     "ip_host": 40, "at_symbol": 35, "punycode": 35, "typosquat": 50,
     "brand_not_owner": 40, "shortener": 35, "suspicious_tld": 25,
     "many_subdomains": 15, "no_https": 15, "sensitive_words": 15,
-    "many_hyphens": 10, "long_url": 10, "non_std_port": 15,
+    "many_hyphens": 10, "long_url": 10, "non_std_port": 15, "free_hosting": 35,
 }
 TRUSTED_BONUS = -50
 
@@ -121,6 +130,8 @@ def extract_features(url: str) -> dict:
         "many_hyphens": reg.replace("xn--", "").count("-") >= 2,
         "sensitive_words": (not trusted) and any(w in lower for w in SENSITIVE),
         "non_std_port": p.port not in (None, 80, 443),
+        "free_hosting": any(h in host or h in lower for h in FREE_HOSTS if h.startswith(("/", "ipfs.")))
+                        or any(host == h or host.endswith("." + h) for h in FREE_HOSTS),
         "trusted_domain": trusted and not is_ip,
     }
     return f
